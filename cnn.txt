@@ -1,0 +1,97 @@
+%matplotlib inline
+import numpy as np                   # advanced math library
+
+# for reproducibility
+from numpy.random import seed
+seed(42)
+import tensorflow as tf
+tf.random.set_seed(42)
+
+import matplotlib.pyplot as plt      # MATLAB like plotting routines
+import random                        # for generating random numbers
+
+from keras.datasets import mnist     # MNIST dataset is included in Keras
+from keras.models import Sequential  # Model type to be used
+
+from keras.layers.core import Dense, Dropout, Activation # Types of layers to be used in our model
+from keras.utils import np_utils                         # NumPy related tools
+
+from sklearn.model_selection import train_test_split # some helper from scikit for data split
+
+#get rid of annoying GPU warnings (and others)
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+# Split the train and a majority validation (test) set to emphasize data dependence
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.9, random_state=0)
+
+print("X_train shape", X_train.shape)
+print("y_train shape", y_train.shape)
+print("X_val shape", X_val.shape)
+print("y_val shape", y_val.shape)
+print("X_test shape", X_test.shape)
+print("y_test shape", y_test.shape)
+plt.rcParams['figure.figsize'] = (9,9) # Resize figures
+
+for i in range(9):
+    plt.subplot(3,3,i+1)
+    num = random.randint(0, len(X_train))
+    plt.imshow(X_train[num], cmap='gray')
+    plt.title("Class {}".format(y_train[num]))
+    
+plt.tight_layout()
+X_train = X_train.reshape(6000, 784)   # reshape 6,000 28 x 28 matrices into 10,000 784-length vectors.
+X_val = X_val.reshape(54000, 784)   # reshape 54,000 28 x 28 matrices into 10,000 784-length vectors.
+X_test = X_test.reshape(10000, 784) # reshape 10,000 28 x 28 matrices into 60,000 784-length vectors.
+
+X_train = X_train.astype('float32')   # change integers to 32-bit floating point numbers
+X_val = X_val.astype('float32')   # change integers to 32-bit floating point numbers
+X_test = X_test.astype('float32')
+
+print("Training matrix shape", X_train.shape)
+print("Validation matrix shape", X_val.shape)
+print("Testing matrix shape", X_test.shape)
+X_train /= 255
+X_val /= 255
+X_test /= 255
+from keras.preprocessing.image import ImageDataGenerator
+from keras.layers import Conv2D, MaxPooling2D, Flatten, BatchNormalization
+(X_train,y_train), (X_test,y_test) = mnist.load_data()
+
+# Split the train and a majority validation set to emphasize data dependence (same as before)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.9, random_state=0)
+X_train = X_train.astype('float32')         # change integers to 32-bit floating point numbers
+X_val = X_val.astype('float32')
+X_test = X_test.astype('float32')
+
+X_train /= 255                              # normalize each value for each pixel for the entire vector for each input
+X_val /= 255
+X_test /= 255
+
+X_train = X_train.reshape(-1,28,28,1)
+X_val = X_val.reshape(-1,28,28,1)
+X_test = X_test.reshape(-1,28,28,1)
+
+print("Training matrix shape", X_train.shape)
+print("Validation matrix shape", X_val.shape)
+print("Testing matrix shape", X_test.shape)
+model = Sequential() 
+batch_sz = 128
+num_epochs = 10
+gen = ImageDataGenerator(
+        featurewise_center=False,  # set input mean to 0 over the dataset
+        samplewise_center=False,  # set each sample mean to 0
+        featurewise_std_normalization=False,  # divide inputs by std of the dataset
+        samplewise_std_normalization=False,  # divide each input by its std
+        zca_whitening=False,  # apply ZCA whitening
+        rotation_range=10,  # randomly rotate images in the range (degrees, 0 to 180)
+        zoom_range = 0.1, # Randomly zoom image
+        width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
+        height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
+        horizontal_flip=False,  # randomly flip images
+        vertical_flip=False)  # randomly flip images
+
+gen2 = ImageDataGenerator()
+
+train_gen = gen.flow(X_train, y_train, batch_size=batch_sz)
